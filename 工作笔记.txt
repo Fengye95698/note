@@ -1,0 +1,24 @@
+一.关于项目拉取问题小7手游后台：
+1.在gitlab上拉取项目需要用到身份验证器，同时在上面生成自己的令牌用于登陆用
+!! 记得在gitlab拉取项目登录的是使用自己生成的令牌，而不是登陆密码
+
+2.拉取项目后npm install更新依赖
+3.登录进入测试后台之后取当前的cookie值更新到fetch.js请求拦截器中代码的cookie
+4.进入到host文件C:\Windows\System32\drivers\etc\host里面把
+	127.0.0.1       tf.local.msshuo.cn
+	127.0.0.1       kf.local.msshuo.cn
+	127.0.0.1       yy.pub.msshuo.cn
+	127.0.0.1       yy.pub-dev.msshuo.cn
+	127.0.0.1       www.x7sy.com127.0.0.1       activate.navicat.com
+加到后面即可（注意需要用vscode打开进行编辑）
+5.正常启动项目，即可进入根据路由文件进入到相应的路由即可查看项目
+
+二.关于git代码提交拉取规范（钉钉上面的文档） 建立自己的分支 dev/yrf-模块
+	命令步骤：
+	记得在自己的分支中
+	1.git init
+	2.git add .
+	3.git commit -m "first commit"
+	4.git remote add origin + 地址
+	5.git pull origin master 拉取下来看看有没有冲突
+	6.确认没有冲突后 git push即可

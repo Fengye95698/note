@@ -1,0 +1,474 @@
+1.vue生命周期 （其实是一个过程）
+beforeCreate() --- 此时数据data和事件方法methods还没有绑定到app对象上
+created()  ---  此时数据Data 和methods已经绑定到应用对象上
+beforeMount()  // 挂载   --- 渲染数据前，根据数据生成的dom对象是获取不到的
+mounted()  --- 渲染数据后，可以获取数据生成的dom对象
+当data被修改时会触发beforeUpdate()
+虚拟DOM重新渲染并应用更新后再触发updated()
+最后还有销毁
+beforeDestroy()和Destroy()
+
+钩子函数：中途可以触发的事件
+
+2.组件
+Vue.component("hello-com",{
+       template:"<h1>{{ ye }}</h1>",
+       data(){
+          return { ye:"hello ye"  }	
+     },
+})
+组件传值 （可以看例子） ？？？需要再次理解
+1、父组件可以使用 props 把数据传给子组件。
+2、子组件可以使用 $emit 触发父组件的自定义事件。
+
+插槽
+slot 里面的内容变量只跟父元素有关
+
+Vue驼峰命名（链接地址：https://www.cnblogs.com/cjll/p/13706747.html）
+1.注册组件的时候使用了驼峰命名
+如果在注册组件的时候使用了驼峰命名, 那么在使用时需要转换成短横线分隔命名
+2.传递数据时使用驼峰名称
+如果父组件向子组件传递数据时使用了短横线分隔命名, 子组件接收时写驼峰式命名
+3.传递方法时双方都不能使用驼峰命名, 只能用短横线分隔命名
+
+学习百度网盘视频资料 mock可以快速创建接口
+1.vue的生命周期应用场景
+创建阶段（1次）--> 更新阶段 --> 销毁阶段（执行1次）
+（1）创建阶段
+(初始化事件和生命周期)  beforeCreate-->created（页面还没有渲染，但是vue已经初始实例化完成）-->beforeMount-->render-->mounted（此时的页面已经渲染完） （异步请求、操作DOM、定时器等）
+（2）更新阶段(可以多次调用)
+(依赖数据改变或$forceUpdate强制刷新)->beforeUpdate(移除已经添加的事件监听器等  万万不可更改依赖数据)-->render-->updated
+（操作DOM添加事件监听器等 不能更改依赖数据 否则会造成死循环直到浏览器爆掉）
+
+v-for里面数据层次太多， 修改过数据变了，页面没有重新渲染，需手动强制刷新。
+解决方法：运用 this.$forceUpdate()强制刷新，调用强制更新方法this.$forceUpdate()会更新视图和数据，触发updated生命周期。
+
+（3）销毁阶段
+beforeDestroy(移除已经添加的事件监听器)--destroy
+
+Vuex核心概念
+State --- this.$store.state.xxx取值  (原理：提供一个响应式数据)
+Getter --- this.$store.getters.xxx取值 （借助Vue的计算属性computed来实现缓存）
+Mutation --- this.$store.commit('xxx')赋值 （更改state方法）
+Action --- this.$store.dispatch('xxx')赋值 （触发mutation方法）
+Module （Vue.set动态添加state到响应式数据中）
+
+2.为什么需要vuex
+vuex是一种状态管理模式，若有2份数据，我们在两个页面里面操作两次感觉还行，如果有10个，20个 ……页面需要这样，那么这就是一个让人奔溃的事情，而且数据的同步刷新也很痛苦。所以就需要Vuex了。
+vuex就是将数据共享给多个组件共同使用，同时也将这个数据的状态进行了共享（一个组件改变这个数据的状态其它组件也跟着改变）
+
+3.vuex是通过什么方式提供响应式数据的
+答：通过new vue（{}）
+
+const store = new Vuex.store({
+	state:{
+	   count:0
+	},
+	mutations:{
+	  increment(state){
+	         state.count++
+	   }
+	},
+	actions:{
+	  increment({state}){}
+	}
+	getters:{}
+})
+resetStoreVM(源码)首先会遍历wrappedGetters，使用Object.defineProperty方法为每一个getter绑定上get方法，这样我们就可以在组件里访问this.$store.getter.test就等同于访问store._vm.test。
+由于Vue实例对象的data和computed属性是响应式的，那么就可以通过实例对象重设store，将state注册到实例对象的data中，将Getters注册到实例对象的computed中，进而实现了Vuex是响应式的。
+
+4.$Store是如何挂载到实例this上
+Vue.js提供了Vue.use()方法用来给Vue.js安装插件，当调用Vue.use(Vuex)时，内部通过调用Vuex插件的install方法来进行插件的初始化。使用的是install里面执行applyMixin，目的执行vuexlnit方法初始化Vuex，
+vuexInit会尝试从options中获取store，如果当前组件是根组件（Root节点），则options中会存在store，直接获取赋值给store引用。这样一来，所有的组件都获取到了同一份内存地址的Store实例，于是我们可以在每一个组件中通过this.$store愉快地访问全局的Store实例了。
+
+5.router 单页面应用（返回同一个index.html）
+解决的问题：
+· 监听URL的变化，并在变化前后执行相应的多级
+· 不同的URL对应不同的组件
+· 提供多种方式改变URL的API （URL的改变不能导致浏览器刷新）
+（<router-view/>写在哪里 route.js里面的component就出现在哪里）
+
+动态路由 /user/:id (id是动态匹配的)
+
+6.SPA的缺点有哪些，如何解决？
+优点：spa（单页面应用）
+1、用户体验好、快，内容的改变不需要重新加载整个页面，避免了不必要的跳转和重复渲染。
+2、基于上面一点，SPA相对对服务器压力小。
+缺点：
+1： seo 不利于搜索引擎优化
+2： 初次加载页面更耗时
+3：前进、后退、地址栏等，需要程序进行管理；
+4、书签，需要程序来提供支持；
+
+7.router模式
+hash模式：无法使用锚点定位，路径有#
+history模式：需要后台配置，美观
+
+8.路由嵌套总结（https://zhuanlan.zhihu.com/p/95074683）
+
+任何子路由都是在其父路由的组件中切换显示，不管是多少层的路由嵌套，都是这样的理解，所以父路由需要有以下两点，二者缺一不可
+（1）有组件引用
+（2）组件中有router-view组件
+
+9.git使用
+ 1.git init   // 初始化版本库
+ 2.git add .   // 添加文件到版本库（只是添加到缓存区），.代表添加文件夹下所有文件  
+ 3.git commit -m "first commit" // 把添加的文件提交到版本库，并填写提交备注
+ 4.git remote add origin 你的远程库地址  // 把本地库与远程库关联 
+ 5.git push -u origin master    // 第一次推送时 
+ 6.git push origin master  // 第一次推送后，直接使用该命令即可推送修改
+出现错误加入git config --global http.sslVerify false
+之后可以直接使用  git push
+
+10.关于router-view
+其实可以理解为留坑，在App.vue中可以留下路由文件的坑，当进入哪个路由的时候把坑替换掉。在某个页面里面某个部分继续留坑可以由子路由把坑填上，即局部更新视图。
+
+11.关于node基本了解
+ 1. 了解node和npm
+ 2. node简单的命令 例如 node 可以运行js文件
+ 3. npm：node的包管理器
+ 4. npm的所有依赖管理都是通过package.json文件处理的
+通过npm install+依赖的时候，会自动创建node_module文件
+（传输vue整个项目的时候不需要把node_module传过去，只需要把package.json传过去，然后使用命令npm install 会通过package.json里面的安装好相应的依赖）
+
+12.关于export
+ES5写法：
+export function A(a,b){}
+
+ES6写法：
+export const A = (a,b)=>{}
+
+关于引入引出的问题
+// 第一组
+export default function crc32() { // 输出
+  // ...
+}
+import crc32 from 'crc32'; // 输入
+// 第二组
+export function crc32() { // 输出
+  // ...
+};
+import {crc32} from 'crc32'; // 输入
+
+第一组是使用export default时，对应的import语句不需要使用大括号； 
+第二组是不使用export default时，对应的import语句需要使用大括号。 
+export default命令用于指定模块的默认输出。显然，一个模块只能有一个默认输出，
+因此export default命令只能使用一次。所以，import命令后面才不用加大括号，因为只可能唯一对应export default命令。
+
+13.link与@import区别
+1、本质的差别：
+link属于HTML标签，而@import完全是CSS提供的一种方式
+
+2、加载顺序的差别：
+当一个页面被加载时（或者被浏览者浏览时），link引用的CSS会同时被加载，而@import引用的CSS会等到页面全部被下载完再被加载。
+所以有时候浏览@import加载CSS的页面时开始会没有样式（就是闪烁），网速慢的时候会很明显。
+
+3、兼容性的差别：
+@import是CSS2.1提出的，所以老的浏览器不支持，@import只有在IE5以上的才能识别，而link标签无此问题
+
+4、使用dom：
+当使用JavaScript控制dom去改变样式的时候，只能使用link标签，因为@import不是dom可以控制的。
+
+14.浏览器内核
+
+主流浏览器的内核
+Trident(IE内核)
+Trident内核代表产品Internet Explorer，又称其为IE内核。Trident（又称为MSHTML），是微软开发的一种排版引擎。国内很多的双核浏览器其中之一就是Trident，美名其曰“兼容模式”。
+代表：IE、傲游、世界之窗浏览器、Avant、猎豹安全浏览器、360极速浏览器、百度浏览器等。
+Window10发布后，IE将其内置浏览器命名为Edge（原名斯巴达），使用了新内核Edge引擎。
+
+Gecko（Firefox）
+Gecko内核代表作品Mozilla FirefoxGecko是一套开放源代码的、以C++编写的网页排版引擎。Gecko是最流行的排版引擎之一，仅次于Trident。使用它的最著名浏览器有Firefox、Netscape6至9。可惜这几年已经没落了，比如打开速度慢、升级频繁、猪一样的队友flash、神一样的对手Chrome。
+
+Webkit（Safari）
+苹果公司自己的内核，也是苹果的Safari浏览器使用的内核。
+WebKit内核代表作品Safari、Chromewebkit 是一个开源项目，包含了来自KDE项目和苹果公司的一些组件，主要用于Mac OS系统，它的特点在于源码结构清晰、渲染速度极快。缺点是对网页代码的兼容性不高，导致一些编写不标准的网页无法正常显示。主要代表作品有Safari和Google的浏览器Chrome。
+
+Presto（Opera）
+Presto内核代表作品OperaPresto是由Opera Software开发的浏览器排版引擎，供Opera 7.0及以上使用。它取代了旧版Opera 4至6版本使用的Elektra排版引擎，包括加入动态功能，例如网页或其部分可随着DOM及Script语法的事件而重新排版。在13年之后，Opera宣布加入谷歌阵营，弃用了Presto。
+
+Blink（Chrome）
+有Google和Opera Software开发的浏览器排版引擎，2013年4月发布，现在Chrome内核是Blink。Blink其实是webkit的分支，大部分国产浏览器最新版都采用Blink内核。
+
+移动端的浏览器内核主要说的是系统内置浏览器的内核。
+目前移动设备浏览器上常用的内核有Webkit、Blink、Trident、Gecko，其中苹果iOS平台主要是Webkit，Android4.4之前Android系统浏览器的内核是Webkit，Android4.4之后使用Blink，Windows Phone 8系统浏览器内核是Trident。
+
+
+15.
+变量定义：定义合法类型、长度的值给变量，即赋值
+变量声明：就是告诉编译器在程序中使用了哪些变量，及这些变量的数据类型以及变量的长度，然后为变量分配存储空间。
+
+16.什么是哈希
+哈希的意思就是引入随机数量的输入数据，将其加密，然后得出一个固定输出数据。
+
+17.$refs 
+ref用法可以有几种
+1.基本用法，本页面获取dom元素,减少获取dom节点的消耗
+	在vue中就不用dom操作了，可以通过this.$refs去获取元素
+<template>
+  <div id="app">
+    <div ref="testDom">11111</div>
+    <button @click="getTest">获取test节点</button>
+  </div>
+</template>
+ 
+<script>
+export default {
+  methods: {
+    getTest() {
+      console.log(this.$refs.testDom)
+    }
+  }
+};
+</script>
+
+2.获取子组件的data和methods
+	可以通过this.$refs去获取
+	
+(1)获取子组件的data
+子组件
+<template>
+  <div>
+      {{ msg }}
+  </div>
+</template>
+ 
+<script>
+export default {
+  data() {
+    return {
+      msg: "hello world"
+    }
+  }
+}
+</script>
+
+父组件
+<template>
+  <div id="app">
+    <HelloWorld ref="hello"/>
+    <button @click="getHello">获取helloworld组件中的值</button>
+  </div>
+</template>
+ 
+<script>
+import HelloWorld from "./components/HelloWorld.vue";
+ 
+export default {
+  components: {
+    HelloWorld
+  },
+  data() {
+    return {}
+  },
+  methods: {
+    getHello() {
+      console.log(this.$refs.hello.msg)
+    }
+  }
+};
+</script>
+
+(2)调用子组件中的方法
+子组件
+<template>
+  <div>
+  </div>
+</template>
+ 
+<script>
+export default {
+  methods: {
+    open() {
+      console.log("调用到了")
+    }
+  }
+}
+</script>
+
+父组件
+<template>
+  <div id="app">
+    <HelloWorld ref="hello"/>
+    <button @click="getHello">获取helloworld组件中的值</button>
+  </div>
+</template>
+ 
+<script>
+import HelloWorld from "./components/HelloWorld.vue";
+ 
+export default {
+  components: {
+    HelloWorld
+  },
+  data() {
+    return {}
+  },
+  methods: {
+    getHello() {
+      this.$refs.hello.open();
+    }
+  }
+};
+</script>
+
+18.$set
+我们在项目开发的过程中，经常会遇到这种情况：为data中的某一个对象添加一个属性
+但这个光靠this.student.age = 15 赋值的情况视图是不会更新的
+在这里我们发现虽然这个对象身上已经有了该属性，但是视图层并没有更新该数据，是什么造成的呢？
+由于受JavaScript的限制，vue.js不能监听对象属性的添加和删除，因为在vue组件初始化的过程中，会调用getter和setter方法，所以该属性必须是存在在data中，视图层才会响应该数据的变化
+
+<template>
+  <div class="hello">
+    <button @click="setMessage">添加属性</button>
+    {{ student.name }}
+    <input type="text" v-model="student.age">
+  </div>
+</template>
+<script>
+export default {
+  data() {
+    return {
+      student: {
+        name: '张三',
+      }
+    }
+  },
+  methods: {
+    setMessage() {
+      this.student.age = 15
+      console.log(this.student)
+    }
+  }
+}
+</script>
+
+解决这个问题的方法大体有
+使用this.$set(obj, key, value)/vue.set(obj, key, value)
+<script>
+export default {
+ data() {
+   return {
+     student: {
+       name: '张三',
+     }
+   }
+ },
+ methods: {
+   setMessage() {
+     this.$set(this.student, 'age', 15)
+     console.log(this.student)
+   }
+ }
+}
+</script>
+
+
+关于axios的传参问题
+1.params方式
+axios({
+  url:'/users',
+  method:get,
+  params:{
+	id:1
+  }
+})
+
+请求地址:'/users?id=1'
+请求体：无
+
+注：get请求是没有请求体的，所以get请求只能使用params传参
+
+2.data方式
+axios({
+	url:'/users',
+	method:'post',
+	data:{
+	  id:'111',
+	  name:'222'
+	}
+})
+
+请求地址:'/users'
+请求体:{"id":111,"name":'222'}
+
+关于vue-router query和params传参(接收参数)
+1.query方式传参和接收参数
+传参：
+this.$route.push({
+  path:'/xxx',
+  query:{
+	id
+  }
+})
+接收参数：
+this.$route.query.id
+
+2.params方式传参和接收参数
+传参：
+this.$route.push({
+  name:'xxx',
+  params:{
+	id
+  }
+})
+接收参数：
+this.$route.params.id
+
+注意：params传参数里面只能是name:'xxx',不能是path，因为params只能是用name来引入路由，否则参数是undefined
+区别：query相当于get请求，在页面跳转的时候，可以在地址栏看到请求参数，而parmas相当于post请求，参数不会在地址中显示
+
+
+Vue路由守卫
+	作用：在路由跳转的时候，做一些判断或其他的操作。可以把一些业务逻辑，写在这个部分
+	
+	1.全局路由守卫：
+		beforeEach(to,from,next) 跳转的时候
+	2.某个路由内的路由守卫：
+		beforeEnter(to,from,next)
+	3.组件内的路由守卫：
+		beforeRouteEnter(to,from,next)  进入某个路由
+		beforeRouteLeave(to,from,next)	离开某个路由
+	
+	to:目标路由 from：离开路由 next:是否可以进入true/false,或具体某个路径
+
+Css 绝对相对定位
+1.相对定位时，定位原点为:
+	1.原来位置的左上角
+	2.原来位置依然保留
+2.绝对定位时，定位原点为：
+	1.它的最近的父级元素，且此父级元素为相对定位的元素的左上角  (子绝父相)
+	2.如果没有则相对body的左上角
+	3.原来的位置不被保留
+
+
+.forEach()和.map()区别
+共同点：
+1.都循环数组中的每一项
+2.每次循环的匿名函数都有三个参数
+	(1)数组中的当前项item
+	(2)当前项的索引值Index
+	(3)原始数组input
+3.匿名函数中的this指向window
+4.只能循环数组
+
+区别：
+	1. .forEach()没有返回值，同时会改变原数组
+	2. .map()有返回值，返回新数组，但原数组不变
+用途：
+	.forEach() 不改变数据，只是用数据做一些事情
+	.map() 你需要返回一个新数组
+
+Javascript 函数防抖
+作用：防止用户在短时间内大量、重复提交请求
+例如用户注册  知识点setTimeout/clearTimeout
+
+购物车思路：
+可以使用vuex
+把数据传给一个中间件，然后在购物车页面中用vuex取
+
+
+思路：
+获取当前的索引值，通过for循环进行遍历，若当前索引值与遍历索引值相等，则进行相应的操作。
+
+elementUi修改样式需要去除scoped 或者另起一个style标签写样式

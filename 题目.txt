@@ -1,0 +1,374 @@
+Vue面试题：
+1.v-show和v-if的区别
+2.为何v-for中要用key
+3.描述Vue组件生命周期（有父子组件的情况）
+4.Vue组件如何通讯
+5.描述组件渲染和更新的过程
+6.双向数据绑定v-model的实现原理
+7.基于Vue设计一个购物车
+
+webpack面试题：
+1.前端代码为何要进行构建和打包？
+2.module chunk bundle分别什么意思，有什么区别？
+3.loader和plugin的区别？
+4.webpack如何实现冷加载？
+5.webpack常见性能优化？
+6.babel-runtime和babel-polyfill的区别？
+
+
+一.vue的基本使用
+（1）
+（2）Computed 和 watch
+	· computed有缓存，data不变则不会重新计算
+	· watch如何深度监听（默认浅监听） 加一个方法和deep:true
+	· watch监听引用类型，拿不到oldValue （深度监听由于old和val指针相同，则是拿不到，普通浅监听可以拿到）
+	· 
+（3）条件渲染
+	· v-if v-else的用法，可使用变量，也可以使用===表达式
+	· v-if和v-show的区别
+		v-if如果条件不符合的话是直接不显示代码，而v-show是使用一个display:none来让其不在页面显示
+	· v-if和v-show的使用场景
+		更新不频繁的时候使用v-if，而频繁切换的需要用v-show让其性能提高一点
+（4）循环（列表）渲染
+	· 如何遍历对象  v-for
+	· key的重要性（key不能乱写random或者index）
+	· v-for和v-if不能（不建议）一起使用
+		可以先进行if判断再进行for 不能同时使用，否则会导致if执行重复一样多次、
+（5）事件
+	· event参数，自定义参数
+	· 事件修饰符，按键修饰符
+		@click.stop="doThis" --- 阻止单击事件继续传播
+		@submit.prevent="onSubmit" --- 提交事件不再重载页面
+		
+		@click.ctrl="onclick" --- 按下ctrl触发的事件
+	· {观察}事件被绑定到哪里？
+		1.event是原生的
+		2.事件被挂载到当前元素
+
+（6）表单
+	· v-model
+	· 常见表单项textarea checkbox radio select
+	· 修饰符lazy number trim
+		v-model.trim v-model.lazy 这样使用
+	<radio v-model=""></radio>
+（7）Vue组件使用
+	· props和$emit
+	父组件通过动态传值给子组件 使用形式 <list :lst=lst></list>
+	子组件写props可以使用两种方法写 
+	(1)props:['list']
+	(2)props:{
+		list:{
+			type:Array,
+			default(){
+				return []
+			}
+		}
+	}
+	· 组件间通讯-自定义事件（绑定自定义事件 销毁事件 触发事件） 链接:
+	组件间的通讯方式：父-->子是传递一个数据  子-->父触发一个事件（通过props和$emit触发）
+	兄弟组件如何通讯(可以通过EventBus)：通过自定义组件通讯,类似于一个组件绑定一个事件,在另外一个组件触发这个事件  （在beforeDestroy()中需要及时销毁自定义事件，否则容易造成内存泄漏）
+	this.$emit() //调用父组件的事件  event.$emit() //调用自定义事件 
+	https://blog.csdn.net/lhb215215/article/details/82966300
+	
+	· 组件生命周期
+	1.单个组件
+	(1)挂载阶段
+	(2)更新阶段
+	(3)销毁阶段	
+	2.带有父子组件
+	挂载阶段：创建created是由外到内的，渲染mounted是由内到外的
+	更新阶段：beforeupdate是由外到内，update是由内到外的
+	销毁阶段：beforedestroy是由外到内，destroy是由内到外的
+（8）Vue高级特性
+	· 自定义v-model
+	· $nextTick
+		1.vue是异步渲染
+		2.data改变之后，Dom不会立刻渲染
+		3.$nextTick会在DOM渲染之后被触发，以获取最新DOM节点
+		*** 1.异步渲染,$nextTick待DOM渲染完再回调
+		    2.页面渲染时会将data的修改做整合，多次data修改只会渲染一次
+		  （可以通过ref获取到dom结点）
+	· slot
+		普通用法
+		作用域插槽
+		具名插槽
+	· 动态、异步组件
+		*异步组件：
+			import()函数
+			按需加载，异步加载大组件
+			formDemo:()=>import('../component')
+	· keep-alive
+		1.缓存组件
+		2.频繁切换，不需要重复渲染
+		3.Vue常见性能优化（提高性能优化）
+		tab的切换使用keep-alive，普通的使用v-show/if就可以
+	· mixin
+		多个组件有相同逻辑，抽离出来
+		
+		不完美，会出现问题（可读性差不利于阅读、可能会造成命名冲突、会出现多对多关系 复杂度高）
+		
+
+二.Vue原理
+1.数据驱动视图
+Vue MVVM (model view viewModel)模式于传统组件本质区别是：传统组件只是静态渲染，更新需要依赖操作DOM，而Vue直接进行修改data，框架自动帮助我们更新，则更注重逻辑关系与业务数据
+（图片)
+viewModel 意为视图（template部分）和模型（data部分）直接连接的层级 例如通过某个点击事件进行连接
+
+2.Vue响应式
+  · 组件data的数据一旦发生变化，立刻触发视图的更新（数据驱动视图）
+  · 核心API-Object.defineProperty(有缺点，Vue3.0可以避免)
+  Vue2内部使用的是Object.defineProperty来劫持数据的变化，监听的是整个对象，对于对象地址没有发生改变的话vue是不认为有数据改变，因此不更新UI
+  但vue3监听数据使用的是浏览器的新特性Proxy,可以监听到整一个data 的变化，则解决了问题，但同时也因为版本兼容的问题导致vue3使用不广泛
+  
+  Object.defineProperty缺点：
+  · 深度监听，需要递归到底，一次性计算量大
+  · 无法监听新增/删除属性（需要Vue.set Vue.delete）
+  · 无法监听原生数组，需要特殊处理
+  
+ 三.虚拟DOM(vdom)和diff
+  · 用js模拟DOM结构，计算出最小的变更，操作DOM
+  （图片）
+  diff算法优化到时间复杂度O(n)
+     · 只比较同一层级，不夸级比较
+	 · tag不相同，则直接删掉重建，不再深度比较
+	 · tag和key，两者都相同，则认为是相同节点，不再深度比较
+	 （图片）
+	算法总结：
+		1.patchVnode
+		2.addVnodes removeVnodes
+		3.updateChildren(key的重要性)
+		（核心概念：h、vnode、patch、diff、key等）
+	vdom:patch(elem,vnode)和patch(vnode,newVnode) elem为className
+
+四.模板编译
+	模板是Vue中开发最常用的部分，不是html，有指令、插值、JS表达式，那么它到底是什么？模板如何转换为js代码，这个过程叫模板编译
+	经常考察组件渲染和更新过程
+	· 模板编译为render函数，执行render函数返回vnode
+	· 基于vnode再执行patch和diff
+	· 使用webpack vue-loader，会在开发环境下编译模板（*）
+	总结：模板-->render函数-->vnode-->渲染和更新
+	
+五.组件渲染和更新过程	
+	1.初次渲染过程
+	 · 解析模板为render函数
+	 · 触发响应式，监听data属性getter setter
+	 · 执行render函数(会触发getter)，生成vnode，patch(elem,vnode)
+	2.更新过程
+	 · 修改data，触发setter（观察此前是否在getter中已被监听）
+	 · 重新执行render函数，生成newVnode
+	 · patch（vnode,newVnode）
+	 （图）
+
+六.异步渲染
+	· $nextTick
+	· 汇总data的修改，一次性更新视图
+	· 减少DOM操作次数，提高性能
+	
+七.路由原理
+	路由模式
+	· hash
+	特点：
+	1.hash变化会触发网页跳转，即浏览器的前进、后退
+	2.hash变化不会刷新页面，SPA必须的特点
+	3.hash不会提交到server端
+	· history
+	1.用url规范的路由，但跳转时不刷新页面
+	2.history.pushState 浏览器不会刷新
+	3.window.onpopstate 监听浏览器前进、后退
+	需要server端配合（无论访问什么路由，都返回同一个页面）
+	
+	总结：
+	· hash - window.onhashchange
+	· H5 history - history.pushState和window.onpopstate
+	· history 需要后端支持
+	
+	两者选择
+	· to B系统推荐用hash，简单易用，对url规范不敏感
+	· to C 的系统可以考虑history，需要服务端支持
+	· 简单的选择简单的 需要考虑成本
+	
+八.总结
+	1.组件化
+	 · 组件化的历史
+	 · 数据驱动视图
+	 · MVVM（图）
+	 
+	2.响应式
+	 · Object.defineProperty
+	 · 监听对象（深度），监听数组
+	 · Object.defineProperty缺点
+	 
+	3.vdom和diff
+	 · 应用背景
+	 · vnode结构（js模拟html）
+	 · vnode h patch
+	 
+	4.模板编译
+	 · with语法
+	 · 模板编译为render函数
+	 · 执行render函数生成vnode
+	 
+	5.组件渲染/更新过程
+	 · 初次渲染过程
+	 · 更新过程
+	 · 异步渲染
+	 
+	6.前端路由原理
+	 · hash
+	 · history
+	 · 两者对比
+	 
+ Vue面试真题演练
+1.v-show和v-if的区别
+ · v-show通过css display控制显示和隐藏
+ · v-if组件真正的渲染和销毁，而不是显示和隐藏
+ · 频繁切换显示状态用v-show，否则用v-if
+2.为何v-for中要用key
+ · 必须用key，而且不可以是index或者random
+ · diff算法通过tag和key来判断，是否是同一个组件(samenode)
+ · 以此来减少渲染的次数，提升渲染性能
+3.描述Vue组件生命周期（有父子组件的情况）
+ · 单组件生命周期图
+ · 父子组件生命周期关系
+4.Vue组件如何通讯(常见)
+ · 父子组件props和this.$emit
+ · 自定义事件event.$on  event.$off event.$emit
+ · vuex
+5.描述组件渲染和更新的过程
+ 有流程图
+ 1、vue 组件初次渲染过程
+	解析模板为 render 函数
+	触发响应式，监听 data 属性的 getter 和 setter
+	执行 render 函数， 生成 vnode，patch(elem,vnode)
+ 2、vue 组件更新过程
+	修改 data， 触发 setter （此前在getter中已被监听）
+	重新执行 render 函数，生成 newVnode
+	patch(vnode, newVnode)
+	
+6.双向数据绑定v-model的实现原理
+ 假设input元素的value=this.name
+ · 绑定input事件this.name=$event.target.value
+ · data更新触发re-render
+7.对MVVM的理解
+ 图，还需要知道M代表代码哪个地方，V代表什么地方和VM代表什么
+8.computed有何特点
+ · 缓存，data不变不会重新计算
+ · 提高性能
+9.为何组件data是一个函数
+ 我们定义的.vue文件或者vue组件是一个类，每个地方去使用data组件的时候其实是类的实例化，如果data不是一个函数，相当于资源共享即在一个地方修改了data而另外一个地方也会同时被修改。
+此时需要data是一个函数，当实例化的时候调用每一个data函数，则这些data函数就会在闭包之中相互不受影响。
+10.ajax请求应该放在哪个生命周期
+ · mounted
+ · js是单线程的，ajax异步获取数据
+ 放在mounted前是没有用的
+11.如何将组件所有的props传递给子组件？
+ $props
+ <User v-bind="$props" />
+12.如何自己实现v-model
+（看图实现）
+13.多个组件有相同的逻辑，如何抽离？
+ · mixin
+ · 缺点
+14.何时要使用异步组件
+ · 加载大组件
+ · 路由异步加载
+15.何时要使用keep-alive
+ · 缓存组件，不需要重复渲染
+ · 如多个静态tab的切换 
+ · 优化性能
+16.何时需要使用beforeDestroy
+ · 解绑自定义事件event.$off
+ · 清除定时器
+ · 接触自定义的DOM事件，如window scroll
+ （不销毁容易造成内存泄漏)
+17.什么是作用域插槽
+图片
+18.vuex中action和mutation区别
+ · action中处理异步，mutation不可以
+ · mutation做原子操作
+ · action可以整合多个mutaion
+19.vue-router常用的路由模式
+ · hash
+ · history
+ · 两者比较
+20.如何配置vue-router异步加载
+ · component:()=>import()
+21.请用vnode描述一个DOM结构
+ 图片
+22.监听data变化的核心API是什么
+ · Object.defineProperty
+ · 深度监听、监听数组
+ · 缺点
+23.Vue如何监听数组变化
+ · Object.defineProperty不能监听数组变化
+ · 重新定义原型，重写pop、push等方法，实现监听
+ · Proxy可以支持监听
+24.描述响应式原理
+ · 监听变化过程
+ · 描述渲染和更新的过程
+25.diff算法复杂度
+ · O(n)(在O（n^3）基础做了调整)例如：只比较同一层级，不夸级比较，通过观察tag和key判断是不是同一个结点，否则直接去掉等
+26.简述diff算法过程
+	https://www.cnblogs.com/wind-lanyan/p/9061684.html
+ · patch(elem,vnode)和patch(vnode,newVnode)
+ · patchVnode和addVnodes和removeVnodes
+ · updateChildren(key的重要性)
+27.Vue为何是异步渲染，$nextTick何用？
+ · 异步渲染（以及合并data），以提高渲染性能
+ · $nextTick在DOM更新完之后，触发回调
+28.Vue常见的性能优化
+ · 合理使用v-show和v-if
+ · 合理使用computed
+ · v-for加key，避免和v-if同时使用
+ · 自定义事件、DOM事件及时销毁
+ · 合理使用异步组件
+ · 合理使用keep-alive
+ · data层级不要太深
+ · webpack优化层面
+ · 图片懒加载
+29.关于vnode diff vdom关系
+  可以说成vnode组成了vdom（即vdom下面有很多个vnode）
+  真是dom转换成vdom之后，首次渲染就全部渲染上去，此时oldvdom（elem）为null，不需要用到diff。
+  当data发生改变的时候，会按照当前新的真实dom重新获得一个新的vdom（newvdom），而此时diff算法就发生在oldvdom和newvdom之间，作用是
+  为了比较新旧vdom哪些地方发生了改变，只是去更新部分不同的结点，局部渲染，大大提升了效率。
+  
+  
+提问：
+* 执行上下文（下一个界面可能需要用到上一个界面的信息，比如context。上一个界面与下一个界面的关键数据传递）、执行上下文栈、闭包更好的解释、原型、原型链以及他们的作用、promise、http1、2、3三个版本
+* 面试题状态码
+
+1.vue2与vue3的重要区别：
+	对于数组 和 object的更新，出现更新了数据，但页面没有更新的情况，这个时候需要使用Object的深拷贝或者 ...的操作来更新数据。
+	原理是vue2监听的是整个对象，而对象地址没有发生改变，vue2就不认为有数据改变因此不发生改变。但是这个问题在vue3中不会有，
+因为vue3中使用了一个新的方式来监听数据，vue2内部使用的是Object.defineProperty来劫持数据的变化，对于新增的属性是不会监听的。
+但是vue3中监听数据使用过浏览器的新特性Proxy，这个Proxy可以监听到整个data的变化，所以没有了上述情况的发生，但是因为是新特性，
+所以存在版本的差异性。因为vue的核心能力就是数据双向绑定，而这个改变就影响了这个核心能力。
+
+（处理通用的东西）
+请求拦截器
+	把请求拦截下来，加头部信息或者token，再还回去
+	
+	流水线(可以多个拦截器) 上一个输出为下一个的输入...
+	
+	webpack( 多个处理器)
+	
+	
+
+cookie（服务器和浏览器之间 需要信息量小） session（存在服务器的 信息量可以无限量大 前端感知不到后台能感知到 ）
+	第一次登录的时候，服务端会对账号密码进行匹配，是的话就登陆完成此时生成一个token（加密密码）和一个时效时间和vid写到，一个字符串。
+	后台此时写到response的请求头里面，然后发回给浏览器。
+	任何浏览器会查看有没有cookie，有的话会保存到域名下面，通过域名发出的相应都会加上去cookie。后台拿到后，会取出来cookie，然后解密，看看有没有变化或者过期，然后进行下一步的操作。
+	
+浏览器无状态登录，需要通过底层cookie的保留登录态。
+	
+	第二种（）随机生成cookie带过去，然后后台读取这个，去本地搜索这个cookie对应相应的信息（头像、用户信息）
+	
+闭包：一个嵌套的内部函数，而这个内部函数引用了嵌套外部函数的变量
+
+原型：分为隐式原型(__proto__)和显式原型(prototype),每一个实例都有一个隐式原型属性，每一个类（对象）(构造函数)都有一个显式原型属性，prototype是一个对象，指向了当前构造函数的引用地址
+student=new Student()
+即 student.__proto__ === Student.prototype
+
+原型链：原型链是原型对象创建过程的历史记录，当访问一个对象的某个属性时，会先在这个对象本身属性上查找，如果没有找到，则会去它的__proto__隐式原型上查找，即它的构造函数的prototype，
+如果还没有找到就会再在构造函数的prototype的__proto__中查找，这样一层一层向上查找就会形成一个链式结构
+(ps：最终所有构造函数都会继承于Object类，若返回的是null则没有该属性或者方法 有图)
